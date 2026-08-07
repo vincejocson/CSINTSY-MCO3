@@ -12,16 +12,13 @@ import math
 
 
 def get_manhattan_dist(state: int) -> int:
-    """Extracts positions from state integer (RCrc) and computes distance."""
+    """Get positions from state integer (RCrc) and compute distance."""
     # State format: bot_row, bot_col, cat_row, cat_col
     bot_r = state // 1000
     bot_c = (state // 100) % 10
     cat_r = (state // 10) % 10
     cat_c = state % 10
     return abs(bot_r - cat_r) + abs(bot_c - cat_c)
-
-
-
 
 
 #############################################################################
@@ -54,14 +51,6 @@ def train_bot(cat_name, render: int = -1):
     min_exploration_rate = 0.01 # Minimum random move chance (1%)
     decay_rate = 0.001          # How fast exploration_rate decreases each episode
 
-
-
-
-
-
-
-
-
     
     #############################################################################
     # END OF YOUR CODE. DO NOT MODIFY ANYTHING BEYOND THIS LINE.                #
@@ -80,80 +69,44 @@ def train_bot(cat_name, render: int = -1):
         ############################################################################## 
 
 
-        # 1. Reset the environment for a new episode
+        # reset each new episode
         obs, _ = env.reset()
         done = False
         current_distance = get_manhattan_dist(obs)
 
-        # Run until CatBot catches the cat or episode ends
         while not done:
-            # 2. Choose Action: Explore (random) vs Exploit (best Q-value)
+            # explore (random) or exploit (greedy)
             if random.random() < exploration_rate:
-                action = env.action_space.sample()  # Random move
+                action = env.action_space.sample()  # random move
             else:
-                action = int(np.argmax(q_table[obs]))  # Best learned move
+                action = int(np.argmax(q_table[obs]))  # best learned move
 
-            # 3. Take action and observe the next state
             next_obs, _, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
 
             next_distance = get_manhattan_dist(next_obs)
 
-            # 4. Compute Custom Reward
+            # compute reward
             if terminated:
-                reward = 100.0  # Big reward for catching the cat
+                reward = 100.0  # big reward for catching the cat
             else:
-                # Reward moving closer, penalize moving further away
+                # reward moving closer, penalize moving away
                 distance_change = current_distance - next_distance
-                # Small step penalty (-0.1) to encourage speed
+                # small penalty per step to make the bot hurry
                 reward = (distance_change * 2.0) - 0.1
 
-            # 5. Update Q-Table using Q-Learning Formula
             best_next_action = np.argmax(q_table[next_obs])
             target_q = reward + discount_factor * q_table[next_obs][best_next_action] * (1 - int(terminated))
             q_error = target_q - q_table[obs][action]
             
-            # Apply update
             q_table[obs][action] += learning_rate * q_error
 
-            # Advance state and update distance for next iteration
             obs = next_obs
             current_distance = next_distance
 
-        # Decay exploration rate at the end of each episode
+        # decay exploration rate
         exploration_rate = max(min_exploration_rate, exploration_rate * math.exp(-decay_rate))
-        
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
         
         #############################################################################
         # END OF YOUR CODE. DO NOT MODIFY ANYTHING BEYOND THIS LINE.                #
